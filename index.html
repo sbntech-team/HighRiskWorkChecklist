@@ -12,26 +12,32 @@
   <main id="app">
     <section class="section">
       <div class="container">
-        <h1 class="title">Cookhouse Checklist</h1>
+        <h1 class="title">HRW Checklist (Roof Top Works)</h1>
         <br />
         <div class="field">
-          <label class="label">Cookhouse</label>
+          <label class="label">Camp</label>
           <div class="select is-fullwidth">
-            <select v-model="selectedCookhouse" @change="onCookhouseChange">
-              <option v-for="cookhouse in cookhouseList" :key="cookhouse">
-                {{cookhouse}}
+            <select v-model="selectedCamp" @change="onCampChange">
+              <option v-for="camp in campList" :key="camp">
+                {{camp}}
               </option>
             </select>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label">Block</label>
+          <div class="is-fullwidth">
+            <input v-model="selectedBlock" type="number" />
           </div>
         </div>
         <div class="field">
           <label class="label">Date</label>
           <div class="select is-fullwidth">
             <select v-model="selectedResponse">
-              <option v-for="response in filteredResponseByCookhouseList"
+              <option v-for="response in filteredResponseByCampList"
                       :key="response[0].data"
                       :value="response">
-                {{response[3].data}} {{response[4].data}}
+                {{response[3].data}}
               </option>
             </select>
           </div>
@@ -68,17 +74,18 @@
             sheetDataArray: [],
             columnTitleArray: [],
             responseArray: [],
-            cookhouseList: null,
+            campList: null,
             selectedResponse: null,
-            selectedCookhouse: null,
+            selectedCamp: null,
+            selectedBlock: null
           };
         },
         computed: {
-          filteredResponseByCookhouseList() {
+          filteredResponseByCampList() {
             let retArray = [];
-            if (this.selectedCookhouse) {
+            if (this.selectedCamp && this.selectedBlock) {
               retArray = this.responseArray.filter(
-                (res) => res[1].data === this.selectedCookhouse
+                (res) => (res[1].data === this.selectedCamp && res[2].data === this.selectedBlock)
               );
             }
             return retArray;
@@ -86,11 +93,11 @@
         },
         async created() {
           const res = await fetch(
-            "https://sheets.googleapis.com/v4/spreadsheets/1zYq1TEda35_2zQgrxauwlEDjrVf_8b6z6zaQyZaI_EE/values/Form%20Responses%201?alt=json&key=AIzaSyCFG3Jua0zPU_rcZPUpseT1v5L5JA5wuog"
-          );
+            "https://sheets.googleapis.com/v4/spreadsheets/129yhUMQX6si31U9UMPNUQbWQLd6XS7tVv2-Y6UgUibw/values/Form%20Responses%201?alt=json&key=AIzaSyCFG3Jua0zPU_rcZPUpseT1v5L5JA5wuog"
+          );  //change
           const resData = await res.json();
           this.sheetDataArray = resData.values;
-          this.cookhouseList = new Set();
+          this.campList = new Set();
           this.setColumnTitleArray();
           this.setResponsesArray();
         },
@@ -111,12 +118,12 @@
             let tmpObjArray = [];
             for (let row = 1; row < this.sheetDataArray.length; row++) {
               for(let col = 0; col < this.sheetDataArray[row].length; col++){
-                const cellData = this.sheetDataArray[row][col];
+                let cellData = this.sheetDataArray[row][col];
                 //This cell is within the same row
-                const colTitle = this.columnTitleArray[col];
-                const colData = cellData;
-                if (colTitle === "Cookhouse") {
-                  this.cookhouseList.add(colData);
+                let colTitle = this.columnTitleArray[col];
+                let colData = cellData;
+                if (colTitle === "Camp") { //change
+                  this.campList.add(colData);
                 }
                 const tmpObj = {
                   title: colTitle,
@@ -131,7 +138,7 @@
               tmpObjArray = [];
             }
           },
-          onCookhouseChange() {
+          onCampChange() {
             this.selectedResponse = null;
           },
         },
