@@ -26,8 +26,8 @@
         </div>
         <div class="field">
           <label class="label">Block</label>
-          <div class="is-fullwidth">
-            <input v-model="selectedBlock" type="number" />
+          <div>
+            <input v-model="selectedBlock" @change="onCampChange" class="number" />
           </div>
         </div>
         <div class="field">
