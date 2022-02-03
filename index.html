@@ -15,55 +15,66 @@
         <h1 class="title">HRW Checklist (Roof Top Works)</h1>
         <br />
         <div class="field">
-          <label class="label">Camp</label>
+          <label class="label">Job</label>
           <div class="select is-fullwidth">
-            <select v-model="selectedCamp" @change="onCampChange">
-              <option v-for="camp in campList" :key="camp">
-                {{camp}}
+            <select v-model="selectedJob" @change="onJobChange">
+              <!--CHANGE-->
+              <option v-for="job in jobList" :key="job" :value="job.sheet">
+                {{job.name}}
               </option>
             </select>
           </div>
         </div>
-        <div class="field">
-          <label class="label">Block</label>
-          <div>
-            <input class="input is-fullwidth" v-model="selectedBlock" @change="onCampChange"/>
+          <div class="field">
+            <label class="label">Camp</label>
+            <div class="select is-fullwidth">
+              <select v-model="selectedCamp" @change="onCampChange">
+                <option v-for="camp in campList" :key="camp">
+                  {{camp}}
+                </option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label class="label">Block</label>
+            <div>
+              <input class="input is-fullwidth" v-model="selectedBlock" @change="onCampChange" />
+            </div>
+          </div>
+          <div class="field">
+            <label class="label">Date</label>
+            <div class="select is-fullwidth">
+              <select v-model="selectedResponse">
+                <option v-for="response in filteredResponseByCampList"
+                        :key="response[0].data"
+                        :value="response">
+                  {{response[3].data}}
+                </option>
+              </select>
+            </div>
+          </div>
+          <div class="card" v-if="selectedResponse">
+            <div class="card-content">
+              <p class="title">Response Data</p>
+              <hr />
+              <table class="table is-striped is-fullwidth">
+                <thead>
+                  <tr>
+                    <th>Question</th>
+                    <th>Response</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="item in selectedResponse" :key="item.title">
+                    <td>{{item.title}}</td>
+                    <td>{{item.data}}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-        <div class="field">
-          <label class="label">Date</label>
-          <div class="select is-fullwidth">
-            <select v-model="selectedResponse">
-              <option v-for="response in filteredResponseByCampList"
-                      :key="response[0].data"
-                      :value="response">
-                {{response[3].data}}
-              </option>
-            </select>
-          </div>
-        </div>
-        <div class="card" v-if="selectedResponse">
-          <div class="card-content">
-            <p class="title">Response Data</p>
-            <hr />
-            <table class="table is-striped is-fullwidth">
-              <thead>
-                <tr>
-                  <th>Question</th>
-                  <th>Response</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="item in selectedResponse" :key="item.title">
-                  <td>{{item.title}}</td>
-                  <td>{{item.data}}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </section>
+</section>
   </main>
 
   <script>
@@ -75,7 +86,20 @@
             columnTitleArray: [],
             responseArray: [],
             campList: null,
+            jobList: [
+              { name: "Compressed Air Gas Systems",     sheet: "1Rml_EYSOib0t1QenyRsGiTB24jAKo2UzB5YugYnicTo" },
+              { name: "Work Involving Confined Spaces", sheet: "1KWuJuKHb3wjCtXA016kID36V9o0b6adXJmLKfGIqw38" },
+              { name: "Electrical Works",               sheet: "1ihj2Y2E5H5BDENudmPQdX4ATzN1ebmBRxVVE0TQEczc" },
+              { name: "Excavator Operations",           sheet: "1wKSH3JFRJyquOxHMgfeo67KWl8EbFRewD77bFbPXO4M" },
+              { name: "Hot Works",                      sheet: "1mVkDLn7igyxR-7exZJxkDS6HpNeJmT77_FYcLqw9m3o" },
+              { name: "Lorry Crane Operations",         sheet: "18G7K9DUvKIUX3_-524rAVKFks2WbQ075MzCcdRhobpU" },
+              { name: "MEWP Operations",                sheet: "1j-Or_wOM-5lJSIGR0zbjkLiIaMnjM7JTcNreEQjJrjs" },
+              { name: "Mobile Crane Operations",        sheet: "1vjQEOZ3QHikDWmrjOpVtn6qXywzK3BFlIe2-P6mteEw" },
+              { name: "Rooftop Works",                  sheet: "129yhUMQX6si31U9UMPNUQbWQLd6XS7tVv2-Y6UgUibw" },
+              { name: "Scaffolding Works",              sheet: "1BXAVWEUr8Sj8jMU4hWjo1ewWH8x6gNzCPGLv_jWYr2c" },
+              ],
             selectedResponse: null,
+            selectedJob: null,
             selectedCamp: null,
             selectedBlock: null
           };
@@ -91,18 +115,9 @@
             return retArray;
           },
         },
-        async created() {
-          const res = await fetch(
-            "https://sheets.googleapis.com/v4/spreadsheets/129yhUMQX6si31U9UMPNUQbWQLd6XS7tVv2-Y6UgUibw/values/Form%20Responses%201?alt=json&key=AIzaSyCFG3Jua0zPU_rcZPUpseT1v5L5JA5wuog"
-          );  //change
-          const resData = await res.json();
-          this.sheetDataArray = resData.values;
-          this.campList = new Set();
-          this.setColumnTitleArray();
-          this.setResponsesArray();
-        },
         methods: {
           setColumnTitleArray() {
+            this.columnTitleArray = [];
             // We have a max of 97 possible options thus we stop after retrieving the first 97 columns of the first row
             for (let index = 0; index < this.sheetDataArray[0].length; index++) {
               this.columnTitleArray.push(
@@ -116,6 +131,7 @@
             // We start at row 2 as the first row contains titles
             let currRow = "2";
             let tmpObjArray = [];
+            this.responseArray = [];
             for (let row = 1; row < this.sheetDataArray.length; row++) {
               for(let col = 0; col < this.sheetDataArray[row].length; col++){
                 let cellData = this.sheetDataArray[row][col];
@@ -141,6 +157,17 @@
           onCampChange() {
             this.selectedResponse = null;
           },
+          async onJobChange() {
+            this.selectedResponse = null;
+            let res = await fetch(
+              "https://sheets.googleapis.com/v4/spreadsheets/" + this.selectedJob + "/values/Form%20Responses%201?alt=json&key=AIzaSyCFG3Jua0zPU_rcZPUpseT1v5L5JA5wuog"
+            );  //change
+            let resData = await res.json();
+            this.sheetDataArray = resData.values;
+            this.campList = new Set();
+            this.setColumnTitleArray();
+            this.setResponsesArray();
+          }
         },
       });
   </script>
