@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cookhouse Checklist</title>
+  <title>HRC</title>
   <script src="https://cdn.jsdelivr.net/npm/vue@2.6.11/dist/vue.min.js"></script>
   <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css" />
@@ -12,10 +12,10 @@
   <main id="app">
     <section class="section">
       <div class="container">
-        <h1 class="title">HRW Checklist Responses</h1>
+        <h1 class="title">HRC Responses</h1>
         <br />
         <div class="field">
-          <label class="label">Job</label>
+          <label class="label">Job Type</label>
           <div class="select is-fullwidth">
             <select v-model="selectedJob" @change="onJobChange">
               <!--CHANGE-->
@@ -43,6 +43,12 @@
           </div>
           <div class="field">
             <label class="label">Date</label>
+            <div>
+              <input class="input is-fullwidth" type="date" v-model="selectedDate" @change="onDateChange"/>
+            </div>
+          </div>
+          <div class="field">
+            <label class="label">Job</label>
             <div class="select is-fullwidth">
               <select v-model="selectedResponse">
                 <option v-for="response in filteredResponseByCampList"
@@ -52,6 +58,8 @@
                 </option>
               </select>
             </div>
+            <label class="label" v-if="pleaseWait">Please wait...</label>
+            <label class="label" v-if="!pleaseWait && filteredResponseByCampList.length === 0">No results found</label>
           </div>
           <div class="card" v-if="selectedResponse">
             <div class="card-content">
@@ -85,8 +93,9 @@
             sheetDataArray: [],
             columnTitleArray: [],
             responseArray: [],
-            campList: null,
+            campList: ["Amoy Quee Camp", "Dieppe Barrack", "Khatib camp", "Mandai Hill Camp", "Nee soon camp", "Nee soon driclad", "Seletar Camp", "Sembawang camp"],
             jobList: [
+              { name: "All", sheet: "All" },
               { name: "Compressed Air Gas Systems",     sheet: "1Rml_EYSOib0t1QenyRsGiTB24jAKo2UzB5YugYnicTo" },
               { name: "Work Involving Confined Spaces", sheet: "1KWuJuKHb3wjCtXA016kID36V9o0b6adXJmLKfGIqw38" },
               { name: "Electrical Works",               sheet: "1ihj2Y2E5H5BDENudmPQdX4ATzN1ebmBRxVVE0TQEczc" },
@@ -101,7 +110,9 @@
             selectedResponse: null,
             selectedJob: null,
             selectedCamp: null,
-            selectedBlock: null
+            selectedBlock: null,
+            selectedDate: "2022-02-22",
+            pleaseWait: false
           };
         },
         computed: {
@@ -109,7 +120,7 @@
             let retArray = [];
             if (this.selectedCamp && this.selectedBlock) {
               retArray = this.responseArray.filter(
-                (res) => (res[1].data === this.selectedCamp && res[2].data === this.selectedBlock)
+                (res) => (res[1].data === this.selectedCamp && res[2].data === this.selectedBlock && new Date(this.selectedDate).toDateString() === new Date(res[3].data).toDateString())
               );
             }
             return retArray;
@@ -125,22 +136,20 @@
               );
             }
           },
-          setResponsesArray() {
+          setResponsesArray(clr) {
             // We want to break the responses down to individual objects before placing them in responseArray
             // We start at 97 as the elements before are titles
             // We start at row 2 as the first row contains titles
             let currRow = "2";
             let tmpObjArray = [];
-            this.responseArray = [];
+            console.log(clr);
+            if(clr) this.responseArray = [];
             for (let row = 1; row < this.sheetDataArray.length; row++) {
               for(let col = 0; col < this.sheetDataArray[row].length; col++){
                 let cellData = this.sheetDataArray[row][col];
                 //This cell is within the same row
                 let colTitle = this.columnTitleArray[col];
                 let colData = cellData;
-                if (colTitle === "Camp") { //change
-                  this.campList.add(colData);
-                }
                 const tmpObj = {
                   title: colTitle,
                   data: colData,
@@ -153,21 +162,46 @@
                 this.responseArray.push([...tmpObjArray]);
               tmpObjArray = [];
             }
+            console.log(this.responseArray);
           },
           onCampChange() {
             this.selectedResponse = null;
+            //this.campList.add("Hello World");
           },
           async onJobChange() {
+            this.pleaseWait = true;
             this.selectedResponse = null;
-            let res = await fetch(
-              "https://sheets.googleapis.com/v4/spreadsheets/" + this.selectedJob + "/values/Form%20Responses%201?alt=json&key=AIzaSyCFG3Jua0zPU_rcZPUpseT1v5L5JA5wuog"
-            );  //change
-            let resData = await res.json();
-            this.sheetDataArray = resData.values;
-            this.campList = new Set();
-            this.setColumnTitleArray();
-            this.setResponsesArray();
-          }
+            if(this.selectedJob === "All"){
+              this.responseArray = [];
+              for (let i = 1; i < this.jobList.length; i++) {
+                let res = await fetch(
+                  "https://sheets.googleapis.com/v4/spreadsheets/" + this.jobList[i].sheet + "/values/Form%20Responses%201?alt=json&key=AIzaSyCFG3Jua0zPU_rcZPUpseT1v5L5JA5wuog"
+                );  //change
+                let resData = await res.json();
+                this.sheetDataArray = resData.values;
+                this.setColumnTitleArray();
+                this.setResponsesArray(false);
+              }
+              this.pleaseWait = false;
+            } else {
+              let res = await fetch(
+                "https://sheets.googleapis.com/v4/spreadsheets/" + this.selectedJob + "/values/Form%20Responses%201?alt=json&key=AIzaSyCFG3Jua0zPU_rcZPUpseT1v5L5JA5wuog"
+              );  //change
+              let resData = await res.json();
+              this.sheetDataArray = resData.values;
+              this.setColumnTitleArray();
+              await this.setResponsesArray(true);
+              this.pleaseWait = false;
+            }
+          },
+          async onDateChange(){
+            console.log(this.selectedDate);
+            //console.log(this.selectedResponse[3].data);
+            console.log(new Date(this.selectedDate).toDateString());
+            console.log(this.responseArray[0][3].data);
+            console.log(new Date(this.responseArray[0][3].data).toDateString());
+            this.selectedResponse = null;
+          },
         },
       });
   </script>
