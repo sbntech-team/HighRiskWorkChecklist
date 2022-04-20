@@ -175,7 +175,7 @@
               this.responseArray = [];
               for (let i = 1; i < this.jobList.length; i++) {
                 let res = await fetch(
-                  "https://sheets.googleapis.com/v4/spreadsheets/" + this.jobList[i].sheet + "/values/Form%20Responses%201?alt=json&key=AIzaSyCFG3Jua0zPU_rcZPUpseT1v5L5JA5wuog"
+                  "https://sheets.googleapis.com/v4/spreadsheets/" + this.jobList[i].sheet + "/values/Supply%20Base%20North?alt=json&key=AIzaSyCFG3Jua0zPU_rcZPUpseT1v5L5JA5wuog"
                 );  //change
                 let resData = await res.json();
                 this.sheetDataArray = resData.values;
@@ -185,7 +185,7 @@
               this.pleaseWait = false;
             } else {
               let res = await fetch(
-                "https://sheets.googleapis.com/v4/spreadsheets/" + this.selectedJob + "/values/Form%20Responses%201?alt=json&key=AIzaSyCFG3Jua0zPU_rcZPUpseT1v5L5JA5wuog"
+                "https://sheets.googleapis.com/v4/spreadsheets/" + this.selectedJob + "/values/Supply%20Base%20North?alt=json&key=AIzaSyCFG3Jua0zPU_rcZPUpseT1v5L5JA5wuog"
               );  //change
               let resData = await res.json();
               this.sheetDataArray = resData.values;
